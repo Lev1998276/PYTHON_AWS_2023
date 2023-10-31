@@ -1,0 +1,108 @@
+import os
+import boto3
+import snowflake.connector as sf_c
+
+def get_csv_file_keys_from_s3(bucket_name, prefix):
+    # Initialize the S3 client
+    s3_client = boto3.client('s3')
+    
+    # Get a list of all objects in the bucket with the specified prefix
+    objects = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)['Contents']
+    
+    # Extract file keys for CSV files only
+    csv_file_keys = [obj['Key'] for obj in objects if obj['Key'].lower().endswith('.csv')]
+    
+    return csv_file_keys
+
+# Specify your S3 bucket name and prefix
+bucket_name = 'vnsny-das-staging-test'
+prefix = 'SRCFILES/TEST_LG/'
+
+
+# Get CSV file keys using the function
+csv_file_keys = get_csv_file_keys_from_s3(bucket_name, prefix)
+
+# Initialize the Snowflake connection
+
+
+s3_resource = boto3.resource('s3')
+s3_client = boto3.client('s3')
+
+CEDL_HOME = os.environ['CEDL_HOME']
+nexus_connectionProfile = CEDL_HOME + '/etc/.sf.nexus.profile'
+s3_connectionProfile = CEDL_HOME + '/etc/.s3_connection_profile'
+
+
+
+
+
+# Function to create connection
+def snowFlake_Connection():
+    try:
+        pathExist = os.path.exists(nexus_connectionProfile)
+        if (not pathExist):
+            print('The profile {} doesn''t exist'.format(nexus_connectionProfile))
+            exit(1)
+        profileFile = open(nexus_connectionProfile)
+        for line in profileFile:
+            if (line.split('=')[0] == 'snowflakeAccount'):
+                snowflakeAccount = line.split('=')[1].replace('\n', '')
+            elif (line.split('=')[0] == 'snowflakeUsername'):
+                snowflakeUsername = line.split('=')[1].replace('\n', '')
+            elif (line.split('=')[0] == 'snowflakePassword'):
+                snowflakePassword = line.split('=')[1].replace('\n', '')
+            elif (line.split('=')[0] == 'snowflakeRole'):
+                snowflakeRole = line.split('=')[1].replace('\n', '')
+            elif (line.split('=')[0] == 'snowflakeDBName'):
+                snowflakeDBName = line.split('=')[1].replace('\n', '')
+            elif (line.split('=')[0] == 'snowflakeWarehouse'):
+                snowflakeWarehouse = line.split('=')[1].replace('\n', '')
+            else:
+                pass
+        profileFile.close()
+        if (len(snowflakeAccount) == 0 or len(snowflakeUsername) == 0 or len(snowflakePassword) == 0 or len(
+                snowflakeRole) == 0 or len(snowflakeDBName) == 0 or len(snowflakeWarehouse) == 0):
+            print('some parameters are missing from {}'.format(nexus_connectionProfile))
+            exit(1)
+        conn = sf_c.connect(user=snowflakeUsername, password=snowflakePassword, account=snowflakeAccount,
+                            warehouse=snowflakeWarehouse, database=snowflakeDBName)
+        print("connected to SNOWFLAKE Database.")
+    except sf_c.Error as e:
+        print('Error connecting to SNOWFLAKE Database - {}'.format(e))
+        exit(1)
+    return conn
+
+conn = snowFlake_Connection()
+cursor = conn.cursor()
+
+cursor.execute('USE DATABASE NEXUS;')  # Replace with your actual database name
+cursor.execute('USE SCHEMA TEMP;')      # Replace with your actual schema name
+
+
+# Process CSV files and load them into Snowflake tables
+for file_key in csv_file_keys:
+    table_name = file_key.split('/')[-1].split('.')[0]  # Extract table name from file name
+    cursor = conn.cursor()
+    
+    # Read the file content
+    s3_client = boto3.client('s3')
+    response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
+    file_content = response['Body'].read().decode('utf-8')
+    
+    # Assume the first row contains the column names
+    columns = file_content.split('\n')[0].split(',')
+    columns_str = ', '.join([f'"{col}" STRING' for col in columns])
+    
+    # Create the table in Snowflake
+    cursor.execute(f'CREATE TABLE IF NOT EXISTS {table_name} ({columns_str});')
+    
+    # Copy the data from S3 into the table
+    cursor.execute(f'COPY INTO {table_name} FROM @NEXUS.JMAN.STAGE_HOME/{bucket_name}/{file_key} '
+                   f'FILE_FORMAT=(TYPE=CSV SKIP_HEADER=1);')
+    
+    cursor.close()
+
+# Close the Snowflake connection
+conn.close()
+
+
