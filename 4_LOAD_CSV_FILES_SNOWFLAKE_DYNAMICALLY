@@ -100,7 +100,7 @@ for file_key in csv_file_keys:
     cursor.execute(f'COPY INTO {table_name} FROM @NEXUS.JMAN.STAGE_HOME/{bucket_name}/{file_key} '
                    f'FILE_FORMAT=(TYPE=CSV SKIP_HEADER=1);')
     
-    cursor.close()
+cursor.close()
 
 # Close the Snowflake connection
 conn.close()
