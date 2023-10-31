@@ -1,0 +1,17 @@
+import boto3
+
+def read_files_from_s3(bucket_name, file_keys):
+    s3_client = boto3.client('s3')
+    
+    for file_key in file_keys:
+        response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
+        file_content = response['Body'].read().decode('utf-8')
+        print(f"Content of file '{file_key}':")
+        print(file_content)
+        print("\n--- End of File ---\n")
+
+# Specify your S3 bucket name and list of file keys
+bucket_name = 'vnsny-das-staging-test'
+file_keys = ['SRCFILES/TEST_LG/products.csv','SRCFILES/TEST_LG/employees.csv']
+
+read_files_from_s3(bucket_name, file_keys)
