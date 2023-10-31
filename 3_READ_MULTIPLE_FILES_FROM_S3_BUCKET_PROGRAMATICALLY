@@ -1,0 +1,29 @@
+
+import boto3
+
+def get_file_keys_from_s3(bucket_name, prefix):
+    # Initialize the S3 client
+    s3_client = boto3.client('s3')
+    # Get a list of all objects in the bucket with the specified prefix
+    objects = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)['Contents']
+    # Extract file keys from the objects
+    #file_keys = [obj['Key'] for obj in objects]
+    file_keys = [obj['Key'] for obj in objects if obj['Key'].lower().endswith('.csv')]
+    return file_keys
+
+# Specify your S3 bucket name and prefix
+bucket_name = 'vnsny-das-staging-test'
+prefix = 'SRCFILES/TEST_LG/'
+
+
+# Get file keys using the function
+file_keys = get_file_keys_from_s3(bucket_name, prefix)
+
+# Process files
+for file_key in file_keys:
+    s3_client = boto3.client('s3')
+    response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
+    file_content = response['Body'].read().decode('utf-8')
+    print(f"Content of file '{file_key}':")
+    print(file_content)
+    print("\n--- End of File ---\n")
