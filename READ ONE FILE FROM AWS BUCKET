@@ -1,0 +1,16 @@
+import boto3
+
+s3_resource = boto3.resource('s3')
+s3_client = boto3.client('s3')
+s3_bucket = 'vnsny-das-staging-test'
+mybucket = s3_resource.Bucket(s3_bucket)
+
+
+Value = 'SRCFILES/TEST_LG/products.csv'
+
+files_in_s3_bucket =[(obj.bucket_name, obj.key) for obj in mybucket.objects.filter(Prefix=Value)]
+
+for eachObject in files_in_s3_bucket:
+    obj = s3_resource.Object(bucket_name= eachObject[0],key = eachObject[1])
+    file_content = obj.get()['Body'].read().decode('utf-8')
+    print(file_content)
