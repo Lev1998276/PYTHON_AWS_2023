@@ -1,0 +1,62 @@
+#---------------------------#
+# UPLOAD A SPECIFIC FILE TO S3 BUCKET#
+#NOTE - FILE NAME MUST BE SPECIFIED FOR BOTH SOURCE AND DESTINATION#
+#---------------------------#
+import boto3
+import os
+
+# Initialize S3 client
+s3 = boto3.client('s3')
+
+# Define the bucket name and source file path
+bucket_name = 'vnsny-das-staging-test'
+file_path = '/AppDev/CEDL/etl/SrcFiles/lg/foo/product1.txt'  # Replace with actual file path
+s3_key = 'SRCFILES/TEST_LG/product1.txt'  # Replace with desired S3 object key
+
+# Check if the file exists
+if os.path.isfile(file_path):
+    # Upload the file to S3
+    s3.upload_file(file_path, bucket_name, s3_key)
+    print(f'{file_path} uploaded to {bucket_name}/{s3_key}')
+else:
+    print(f'Error: {file_path} does not exist')
+
+
+#---------------------------#
+# UPLOAD PATTERN OF  FILES TO S3 BUCKET#
+#---------------------------#
+
+import boto3
+import glob
+import os
+
+# Initialize S3 client
+s3 = boto3.client('s3')
+
+# Define the bucket name and source folder path
+bucket_name = 'vnsny-das-staging-test'
+source_folder = '/AppDev/CEDL/etl/SrcFiles/lg/foo/'   # Replace with actual folder path
+s3_prefix = 'SRCFILES/TEST_LG/'  # Replace with desired S3 folder prefix
+
+# Define the file pattern you want to match
+file_pattern = '*.txt'  # Example: Match all .txt files
+
+# Use glob to find files matching the pattern
+files_to_upload = glob.glob(source_folder + file_pattern)
+
+# Upload each matching file to S3
+
+if os.path.isfile(file_path):
+    for file_path in files_to_upload:
+        # Extract the filename from the local path
+        file_name = file_path.split('/')[-1]
+        
+        # Define the S3 key for the uploaded file
+        s3_key = s3_prefix + file_name
+        
+        # Upload the file to S3
+        s3.upload_file(file_path, bucket_name, s3_key)
+        
+        print(f'{file_name} uploaded to {bucket_name}/{s3_key}')
+else:
+    print(f'Error: {file_path} does not exist')
