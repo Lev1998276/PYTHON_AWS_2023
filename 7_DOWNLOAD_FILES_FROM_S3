@@ -1,0 +1,86 @@
+
+#---------------------------#
+# DOWNLOAD ONLY 1 FILE FROM S3 BUCKET#
+#NOTE - FILE NAME MUST BE SPECIFIED FOR BOTH SOURCE AND DESTINATION#
+#----------------------------#
+
+
+import boto3
+
+s3 = boto3.client('s3')
+
+bucket_name = 'vnsny-das-staging-test'
+s3_key = 'SRCFILES/TEST_LG/products.csv'  # Replace with the actual S3 object key
+local_file_path = '/AppDev/CEDL/etl/SrcFiles/lg/foo/products.csv'  # Replace with the local destination path
+
+s3.download_file(bucket_name, s3_key, local_file_path)
+
+print(f'{s3_key} downloaded to {local_file_path}')
+
+
+
+
+
+#---------------------------#
+# DOWNLOAD All FILE FROM  S3 BUCKET#
+#NOTE - FILE NAME MUST BE SPECIFIED FOR BOTH SOURCE AND DESTINATION#
+#----------------------------#
+
+
+import os
+import boto3
+
+# Initialize S3 client
+s3 = boto3.client('s3')
+
+# Define the bucket name and folder in S3
+bucket_name = 'vnsny-das-staging-test'
+s3_folder = 'SRCFILES/TEST_LG/'  # Replace with the actual folder path in S3
+
+# Define the local directory to save downloaded files
+local_directory = '/AppDev/CEDL/etl/SrcFiles/lg/foo'  # Replace with the local destination path
+
+# List objects in the specified folder
+response = s3.list_objects_v2(Bucket=bucket_name, Prefix=s3_folder)
+
+for obj in response.get('Contents', [])[1:]:
+    s3_key = obj.get('Key')
+    if s3_key:
+        local_file_path = os.path.join(local_directory, os.path.basename(s3_key))
+        s3.download_file(bucket_name, s3_key, local_file_path)
+        print(f'{s3_key} downloaded to {local_file_path}')
+    else:
+        print(f'Skipping object with no key: {obj}')
+
+
+
+#---------------------------#
+# DOWNLOAD ONLY CSV FILE FROM S3 BUCKET#
+#NOTE - FILE NAME MUST BE SPECIFIED FOR BOTH SOURCE AND DESTINATION#
+#----------------------------#
+
+
+import os
+import boto3
+
+# Initialize S3 client
+s3 = boto3.client('s3')
+
+# Define the bucket name and folder in S3
+bucket_name = 'vnsny-das-staging-test'
+s3_folder = 'SRCFILES/TEST_LG/'  # Replace with the actual folder path in S3
+
+# Define the local directory to save downloaded files
+local_directory = '/AppDev/CEDL/etl/SrcFiles/lg/foo'  # Replace with the local destination path
+
+# List objects in the specified folder
+response = s3.list_objects_v2(Bucket=bucket_name, Prefix=s3_folder)
+
+for obj in response.get('Contents', [])[1:]:
+    s3_key = obj.get('Key')
+    if s3_key and s3_key.endswith('.csv'): 
+        local_file_path = os.path.join(local_directory, os.path.basename(s3_key))
+        s3.download_file(bucket_name, s3_key, local_file_path)
+        print(f'{s3_key} downloaded to {local_file_path}')
+    else:
+        print(f'Skipping object with no key: {obj}')
