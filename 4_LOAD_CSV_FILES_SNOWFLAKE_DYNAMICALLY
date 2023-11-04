@@ -82,6 +82,9 @@ cursor.execute('USE SCHEMA TEMP;')      # Replace with your actual schema name
 # Process CSV files and load them into Snowflake tables
 for file_key in csv_file_keys:
     table_name = file_key.split('/')[-1].split('.')[0]  # Extract table name from file name
+    file_name = file_key.split('/')[-1] 
+    file_key_temp = file_key.split('/')
+    dir_name = file_key_temp[0]+'/'+file_key_temp[1]
     cursor = conn.cursor()
     
     # Read the file content
@@ -91,14 +94,18 @@ for file_key in csv_file_keys:
     
     # Assume the first row contains the column names
     columns = file_content.split('\n')[0].split(',')
-    columns_str = ', '.join([f'"{col}" STRING' for col in columns])
-    
-    # Create the table in Snowflake
-    cursor.execute(f'CREATE TABLE IF NOT EXISTS {table_name} ({columns_str});')
-    
+    cleaned_columns =[col.replace('\r', '') for col in columns]
+    print(cleaned_columns)
+    columns_str = ', '.join([f'"{col}" STRING' for col in cleaned_columns])
+    print(columns_str)
+    print(f'CREATE TABLE IF NOT EXISTS {table_name} ({columns_str});')
+    print("\n")
     # Copy the data from S3 into the table
-    cursor.execute(f'COPY INTO {table_name} FROM @NEXUS.JMAN.STAGE_HOME/{bucket_name}/{file_key} '
-                   f'FILE_FORMAT=(TYPE=CSV SKIP_HEADER=1);')
+    copy_str = f"COPY INTO {table_name} FROM @NEXUS.JMAN.STAGE_HOME/{dir_name}/" + "\n"
+    copy_str1 = f"file_format= (type = csv field_delimiter=',' skip_header=1)" +"\n"
+    copy_str2 = f"files = ('{file_name}')"; 
+    print(copy_str + copy_str1 + copy_str2)
+    cursor.execute(copy_str + copy_str1 + copy_str2)
     
 cursor.close()
 
