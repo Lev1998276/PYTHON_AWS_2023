@@ -1,0 +1,68 @@
+#---------------------------------#
+# COUNT THE TOTAL NUMBER OF FILES
+#---------------------------------#
+import boto3
+
+# Initialize S3 client
+s3 = boto3.client('s3')
+
+# Define the bucket and folder
+bucket_name = 'vnsny-das-staging-test'
+folder_path = 'SRCFILES/TEST_LG/'
+
+# List objects in the specified folder
+response = s3.list_objects_v2(Bucket=bucket_name, Prefix=folder_path)
+
+# Count the number of files
+num_files = len(response['Contents'])
+
+print(f'The number of files in {folder_path} is: {num_files}')
+
+
+
+#---------------------------------#
+#EXCLUDE THE ENTRY WTH NO KEY
+#---------------------------------#
+import boto3
+
+# Initialize S3 client
+s3 = boto3.client('s3')
+
+# Define the bucket and folder
+bucket_name = 'your_bucket_name'
+folder_path = 'your_folder_path/'
+
+# List objects in the specified folder
+response = s3.list_objects_v2(Bucket=bucket_name, Prefix=folder_path)
+
+# Filter objects to exclude entries with no filename
+valid_files = [obj for obj in response['Contents'] if obj.get('Key')]
+
+# Count the number of valid files
+num_files = len(valid_files)
+
+print(f'The number of valid files in {folder_path} is: {num_files}')
+
+
+#---------------------------------#
+#COUNT FILES WITH SPECIFIC PATTERN
+#---------------------------------#
+import boto3
+
+# Initialize S3 client
+s3 = boto3.client('s3')
+
+# Define the bucket and folder
+bucket_name = 'vnsny-das-staging-test'
+folder_path = 'SRCFILES/TEST_LG/'
+
+# List objects in the specified folder
+response = s3.list_objects_v2(Bucket=bucket_name, Prefix=folder_path)
+
+# Filter objects to count only .csv files
+csv_files = [obj for obj in response['Contents'] if obj['Key'].endswith('.csv')]
+
+# Count the number of .csv files
+num_csv_files = len(csv_files)
+
+print(f'The number of CSV files in {folder_path} is: {num_csv_files}')
